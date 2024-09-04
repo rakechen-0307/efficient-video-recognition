@@ -233,6 +233,7 @@ class EVLTransformer(nn.Module):
         B, C, T, H, W = x.size()
         x = x.permute(0, 2, 1, 3, 4).flatten(0, 1)
         features = backbone(x)[-self.decoder_num_layers:]
+        print(features)
         features = [
             dict((k, v.float().view(B, T, *v.size()[1:])) for k, v in x.items())
             for x in features
