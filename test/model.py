@@ -99,7 +99,6 @@ class EVLDecoder(nn.Module):
             self.temporal_conv = nn.ModuleList(
                 [nn.Conv1d(in_feature_dim, in_feature_dim, kernel_size=3, stride=1, padding=1, groups=in_feature_dim) for _ in range(num_layers)]
             )
-            print(self.temporal_conv)
         if enable_temporal_pos_embed:
             self.temporal_pos_embed = nn.ParameterList(
                 [nn.Parameter(torch.zeros([num_frames, in_feature_dim])) for _ in range(num_layers)]
@@ -111,14 +110,13 @@ class EVLDecoder(nn.Module):
 
         self.cls_token = nn.Parameter(torch.zeros([in_feature_dim]))
 
-
     def _initialize_weights(self):
         nn.init.normal_(self.cls_token, std=0.02)
-
 
     def forward(self, in_features: List[Dict[str, torch.Tensor]]):
         N, T, L, C = in_features[0]['out'].size()
         assert len(in_features) == self.num_layers
+        self._initialize_weights()
         x = self.cls_token.view(1, 1, -1).repeat(N, 1, 1)
 
         for i in range(self.num_layers):
@@ -127,9 +125,7 @@ class EVLDecoder(nn.Module):
             if self.enable_temporal_conv:
                 feat = in_features[i]['out']
                 feat = feat.permute(0, 2, 3, 1).contiguous().flatten(0, 1) # N * L, C, T
-                print(feat.shape)
                 feat = self.temporal_conv[i](feat)
-                print(feat.shape)
                 feat = feat.view(N, L, C, T).permute(0, 3, 1, 2).contiguous() # N, T, L, C
                 frame_features += feat
             
